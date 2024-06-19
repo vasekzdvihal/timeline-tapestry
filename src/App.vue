@@ -1,85 +1,113 @@
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
+import { type Ref, ref } from 'vue'
+import { DateTime } from 'luxon'
+
+const DATE_FORMAT = 'yyyy-MM-dd'
+
+class DevCycle {
+  constructor(
+    public name: string,
+    public startDate: DateTime,
+    public endDate: DateTime,
+    public productionVersion: string,
+    public productionPublishDate: DateTime,
+    public stagingVersion: string,
+    public stagingPublishDate: DateTime,
+  ) {}
+
+  get duration(): number {
+    return this.endDate.diff(this.startDate, 'days').days
+  }
+
+  day(duration: number): DateTime {
+    return this.startDate.plus({ days: duration });
+  }
+}
+
+const devCycles = ref([]) as Ref<DevCycle[]>;
+
+devCycles.value.push(
+  new DevCycle(
+    '221 (RC 1.197)',
+    DateTime.fromFormat('2024-06-07', DATE_FORMAT),
+    DateTime.fromFormat('2024-06-27', DATE_FORMAT),
+    '1.196',
+    DateTime.fromFormat('2024-06-26', DATE_FORMAT),
+    '1.197',
+    DateTime.fromFormat('2024-06-10', DATE_FORMAT)
+  )
+)
+
 </script>
 
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
+  <div class="container">
+    <div v-for="devCycle in devCycles" :key="devCycle.name" class="timeline">
+      <div v-for="d in devCycle.duration" :key="d" class="container">
+        <div v-if="d === 1">
+          <div class="day">
+            {{ devCycle.startDate.toLocaleString() }}
+          </div>
+        </div>
 
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
 
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
-      </nav>
+        <div v-else-if="d === devCycle.duration">
+          <div class="day">
+            {{ devCycle.endDate.toLocaleString() }}
+          </div>
+        </div>
+
+
+        <div v-else-if="devCycle.day(d).equals(devCycle.productionPublishDate)" class="timeline__row">
+          <div class="day">
+            <div>Production publish ({{ devCycle.stagingVersion }})</div>
+            <div>{{ devCycle.productionPublishDate.toLocaleString() }}</div>
+          </div>
+        </div>
+
+        <div v-else-if="devCycle.day(d).equals(devCycle.stagingPublishDate)" class="timeline__row">
+          <div class="day">
+            <div>Staging publish ({{ devCycle.stagingVersion }})</div>
+            <div>{{ devCycle.productionPublishDate.toLocaleString() }}</div>
+          </div>
+        </div>
+
+
+        <div v-else class="timeline__link" />
+      </div>
     </div>
-  </header>
-
-  <RouterView />
+  </div>
 </template>
 
 <style scoped>
-header {
-  line-height: 1.5;
-  max-height: 100vh;
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
-
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
+.timeline {
+  display: flex;
+  flex-direction: column;
 }
-
-nav {
-  width: 100%;
-  font-size: 12px;
-  text-align: center;
-  margin-top: 2rem;
+.timeline__link {
+  width: 5px;
+  height: 50px;
+  background: cornflowerblue;
 }
-
-nav a.router-link-exact-active {
-  color: var(--color-text);
+.timeline__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-direction: column;
 }
-
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-
-nav a:first-of-type {
-  border: 0;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
-
-    padding: 1rem 0;
-    margin-top: 1rem;
-  }
+.day {
+  padding: 10px;
+  height: 50px;
+  border-radius: 999px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  background: cornflowerblue;
 }
 </style>
